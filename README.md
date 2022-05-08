@@ -2,11 +2,11 @@
 
 ## Background
 
-The Terraform CLI can be used with a wide variety of workflows. Out-of-the-box, you can get something deployed very quickly with a `terraform init` and a `terraform apply`.
+The Terraform CLI can be used with a wide variety of workflows. Out of the box, you can get something deployed very quickly by running a `terraform init` and a `terraform apply`.
 
-This python script wraps `terraform init` and `terraform <command>``` and enforces a file organization of terraform config and variables files that facilitate doing deploys in muliple cloud acounts, multiple regions, multiple environments.
+`enviroform.py` facilitates doing deploys in muliple cloud acounts, multiple regions, multiple environments. It wraps `terraform init` and `terraform <command>`, dynamically including the appropriate .tfvars input files that are needed. It establishes a pattern of organizing your terraform config and .tfvars files that is well-suited to a large cloud footprint.
 
-It reflects how I've used terraform in fairly large production environments in the past few years putting a heavy emphasis on modularity and an infrastructure-as-code philosopy. Note: Terraform Cloud is a service that solves these problems (and more). This tool is oriented toward enhancing the experience of using Terraform CLI.
+Note: This script reflects how I've used terraform in large organizations over the past few years. However, things are ever-evolving. e.g. Terraform Cloud is a service that solves these problems (and more). This tool is oriented toward enhancing the experience of using Terraform CLI.
 
 ## Concepts
 
@@ -18,7 +18,7 @@ This script is meant to be run in the root of your terraform repo and for you to
 
 ### Your terraform input variables files, *environments*
 
-You will also specify a relative path to your top level .tfvars file for the tf config that you want to deploy. This is where the file heirarchy that defines an *environment* comes in to play. An "Environment" is a collection of related resources. We create a heirarchy of terraform tfvars files that reflect the heirarchy of an *environment* E.g. in AWS, these would exist in an AWS Account. That account may have multiple regions under it. Each region will have it's own backend.tfvars (e.g. sepecifying an S3 bucket). In each region, you have your collection of terraform resources (which you can name arbitrarily, e.g. "apps" "infra")
+You will also specify a relative path to your top level .tfvars file for the tf config that you want to deploy. This is where the file heirarchy that defines an *environment* comes in to play. An *environment* is a collection of related resources. We create a heirarchy of terraform tfvars files that reflect the heirarchy of an *environment* E.g. in AWS, these would exist in an AWS account. That account may have multiple regions under it. Each region will have it's own `backend.tfvars` (e.g. specifying an S3 bucket). In each region, you have your collection of terraform resources (which you can name arbitrarily, e.g. "apps" "infra")
 
 Expects the following files to exist:
   - ```<your_path>/<environment>/environment.tfvars```
@@ -28,8 +28,8 @@ Expects the following files to exist:
   - ```<your_path>/<environment>/<region>/region.tfvars```
     - region specific terraform variables (e.g. AWS region)
   - ```<your_path>/<environment>/<region>/<config_type>/<config_name>/<instance_name>.tfvars```
-    - a .tfvars file do deploy an instance of the <config_name>, of <config_type> in <region>, of <environment>
-    - Note: you can call this default.tfvars, but per the example folder, you may want to deploy multiple instances of a given resource so you could put other .tfvars files in this dir
+    - a .tfvars file to deploy an instance of the `<config_name>`, of `<config_type>` in `<region>`, of `<environment>`
+    - Note: you can call this `default.tfvars`, but per the example folder, you may want to deploy multiple instances of a given resource so you could put other .tfvars files in this dir
 
 
 This script will include all the right tfvars files when doing the following tf commands:
