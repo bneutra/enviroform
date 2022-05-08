@@ -4,46 +4,7 @@
   enviroform.py -t <terraform_path> -z <tfvars_path> <tf_command> [<options>]
 
   Runs the tf <tf_command> (with tf <options>) for the terraform config
-  found in <terraform_path>. Stub examples of "config" components are
-  found in <repo_root>/terraform/apps|infra. When it executes
-  terraform, it includes the tfvars file found at <tfvars_path>, which
-  differentiates this instance of the "config" from others. <tfvars_path>
-  must exist at the correct path within the environments dir, as per below.
-  The filename must begin with the name of the config and end with .tfvars
-  (as a convention).
-
-  From <tfvars_path>, this script infers and includes several other tfvars
-  files which further differentiate this instance of the config component:
-  Expects the following files to exist:
-    - <your_path>/<environment>/<region>/backend.tfvars
-      - Environment type specific terraform backend configuration for
-    - <your_path>/<environment_type>/environment.tfvars
-      - Environment specific terraform configuration
-    - <your_path>/<environment>/<region>/region.tfvars
-      - AWS region specific terraform configuration for the environment
-    - <your_path>/<environment>/<region>/<config_type>/<config_name>
-
-  Using <config_type>, <config_name> and <tfvars_path> filename
-  the script derives the S3 path for the tf state file (the key)
-
-  e.g
-  export TERRAFORM_EXECUTABLE=/usr/local/bin/terraform
-  export AWS_PROFILE=mpse-dev
-  bin/enviroform.py \
-  -c example/terraform/apps/example-app \
-  -z example/environments/example-account/us-east-1/apps/example-app/example-app.tfvars \
-  apply -var docker_tag=v1.1
-
-  This script will include all the right tfvars files when doing
-  the following tf commands:
-  ['plan', 'apply', 'refresh', 'destroy', 'import']
-
-  Otherwise it will will init then only use your tf command and your args.
-
-  If you want to do a special tf init invocation (e.g. init -upgrade), this
-  script will include the correct backend.tfvars and then only run the
-  command and args as you provided them.
-
+  found in <terraform_path>. See README.md for details.
 """
 
 import argparse

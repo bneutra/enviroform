@@ -21,15 +21,25 @@ This script is meant to be run in the root of your terraform repo and for you to
 You will also specify a relative path to your top level .tfvars file for the tf config that you want to deploy. This is where the file heirarchy that defines an *environment* comes in to play. An "Environment" is a collection of related resources. We create a heirarchy of terraform tfvars files that reflect the heirarchy of an *environment* E.g. in AWS, these would exist in an AWS Account. That account may have multiple regions under it. Each region will have it's own backend.tfvars (e.g. sepecifying an S3 bucket). In each region, you have your collection of terraform resources (which you can name arbitrarily, e.g. "apps" "infra")
 
 Expects the following files to exist:
-  - <your_path>/<environment>/environment.tfvars
+  - ```<your_path>/<environment>/environment.tfvars```
     - Environment-wide specific terraform variables
-  - <your_path>/<environment>/<region>/backend.tfvars
+  - ```<your_path>/<environment>/<region>/backend.tfvars```
     - Environment specific terraform backend configuration
-  - <your_path>/<environment>/<region>/region.tfvars
+  - ```<your_path>/<environment>/<region>/region.tfvars```
     - region specific terraform variables (e.g. AWS region)
-  - <your_path>/<environment>/<region>/<config_type>/<config_name>/<instance_name>.tfvars
+  - ```<your_path>/<environment>/<region>/<config_type>/<config_name>/<instance_name>.tfvars```
     - a .tfvars file do deploy an instance of the <config_name>, of <config_type> in <region>, of <environment>
     - Note: you can call this default.tfvars, but per the example folder, you may want to deploy multiple instances of a given resource so you could put other .tfvars files in this dir
+
+
+This script will include all the right tfvars files when doing the following tf commands:
+['plan', 'apply', 'refresh', 'destroy', 'import']
+
+Otherwise it will will *terraform init* then only use your tf command and your args.
+
+If you want to do a special tf init invocation (e.g. init -upgrade), this
+script will include the correct backend.tfvars and then only run the
+command and args as you provided them.
 
 Perhaps the best way to understand all of this is to look at the Usage example below. At a high level, an invocation of enviroform.py interacts with one and only one terraform config and one and only one state file. It's primary job is to infer all of the details of *which* instance of a terraform config you want to deploy and where. The above file heirarchy is what "declares" the desired heirarchy in the cloud.
 
