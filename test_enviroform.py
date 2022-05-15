@@ -13,7 +13,7 @@ os.environ['TERRAFORM_EXECUTABLE'] = 'terraform'
 
 
 def get_test_root_path():
-    return enviroform.get_root_path()
+    return enviroform.get_git_root_path()
 
 
 os.chdir(get_test_root_path())
@@ -174,7 +174,7 @@ def test_failed_tf_cmd(subprocess_mock):
     root_path = get_test_root_path()
     tf = enviroform.Enviroform(
         root_path,
-        enviroform.get_root_path(),
+        enviroform.get_git_root_path(),
         basic_args,
         ['apply'],
     )
@@ -194,7 +194,7 @@ def test_expect_non_zero(subprocess_mock):
     root_path = get_test_root_path()
     tf = enviroform.Enviroform(
         root_path,
-        enviroform.get_root_path(),
+        enviroform.get_git_root_path(),
         basic_args,
         ['apply'],
     )
@@ -254,7 +254,7 @@ def test_no_config(subprocess_mock):
     root_path = get_test_root_path()
     tf = enviroform.Enviroform(
         root_path,
-        enviroform.get_root_path(),
+        enviroform.get_git_root_path(),
         no_deployable_args,
         ['apply'],
     )
@@ -278,7 +278,7 @@ def test_wrong_vars(subprocess_mock):
     root_path = get_test_root_path()
     tf = enviroform.Enviroform(
         root_path,
-        enviroform.get_root_path(),
+        enviroform.get_git_root_path(),
         wrong_vars_args,
         ['apply'],
     )

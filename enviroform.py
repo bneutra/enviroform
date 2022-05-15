@@ -92,40 +92,44 @@ class Enviroform:
             raise Exception(f'Command failed with rc {rc}')
         return rc
 
-    def process_args(self) -> None:
-        """Generate terraform args by inference."""
-        known_args = self.known_args
+    def process_default_flags(self) -> None:
+        """Validate/process default flags."""
+        self.dry_run = self.known_args.dry_run
+        tf_config_rel_path = self.known_args.terraform_config_path
+        self.tf_config_path = os.path.join(
+            self.root_path, tf_config_rel_path
+        )
+        self.check_dir(self.tf_config_path)
+
+    def process_user_args(self) -> None:
+        """Validate/process default args."""
         other_args = self.other_args
         if len(other_args) == 0:
             raise SystemExit(
                 'ERROR: You must provide a terraform command e.g. apply'
             )
-        self.dry_run = known_args.dry_run
         self.tf_command = other_args[0]
         self.tf_args = other_args[1:]
         self.special_commands = [
             'plan', 'apply', 'refresh', 'destroy', 'import', 'init'
         ]
         if self.tf_command not in self.special_commands:
-            if known_args.tfvars_file_path:
-                print(
-                    f'\nWARNING:\nterraform {" ".join(other_args)}\n'
-                    'will be run as provided after init. '
-                    'It has no special processing. '
-                    'You must provide all args and flags.'
-                    f'\ne.g {self.known_args.tfvars_file_path} is used '
-                    'for inference only, and will not be included.\n'
+            print(
+                f'\nWARNING:\nterraform {" ".join(other_args)}\n'
+                'will be run as provided after init. '
+                'It has no special processing. of tfvars files.'
+                'You must provide all args and flags.\n'
+            )
 
-                )
+    def process_tfvars(
+        self, tfvars_file_path: str
+    ) -> tuple[list[str], list[str]]:
+        """Generate terraform vars by inference."""
 
-        tf_config_rel_path = known_args.terraform_config_path
-        tfvars_file_path = known_args.tfvars_file_path
-        self.tf_config_path = os.path.join(
-            self.root_path, tf_config_rel_path)
         tfvars_file_path = os.path.join(
-            self.root_path, tfvars_file_path)
+            self.root_path, tfvars_file_path
+        )
         self.check_file(tfvars_file_path)
-        self.check_dir(self.tf_config_path)
         self.check_file(os.path.join(self.tf_config_path, 'main.tf'))
 
         # discover var files.
@@ -136,7 +140,7 @@ class Enviroform:
         tfvars_path_components = tfvars_file_path.split(os.sep)
         environments_base_path = os.sep.join(tfvars_path_components[:-5])
         env, region, tfvars_config_type, tfvars_dir, tfvars_filename = tfvars_path_components[len(tfvars_path_components)-5:]  # NOQA
-        tf_config_path_components = tf_config_rel_path.split(os.sep)
+        tf_config_path_components = self.tf_config_path.split(os.sep)
         config_type, config_name = tf_config_path_components[-2:]
 
         env_tfvars_file_path = os.path.join(
@@ -162,15 +166,26 @@ class Enviroform:
                 f'{config_type} but is: {tfvars_config_type}'
             )
         backend_key = f'{config_type}/{config_name}/{instance_label}/state.tfstate'  # NOQA
-        self.backend_args = [
+        backend_args = [
             f'-backend-config={backend_tfvars_file_path}',
             f'-backend-config=key={backend_key}'
         ]
-        self.var_file_args = [
+        var_file_args = [
             f'-var-file={env_tfvars_file_path}',
             f'-var-file={region_tfvars_file_path}',
             f'-var-file={tfvars_file_path}'
         ]
+        return backend_args, var_file_args
+
+    def process_args(self) -> None:
+        """Process all flags and args."""
+        self.process_user_args()
+        self.process_default_flags()
+        # NOTE: This implementation of finding .tfvars files on disk could.
+        # be replaced with a different strategy, using subclassing.
+        # e.g. pulling .tfvars variables from cloud state, instead.
+        # like AWS Parameter Store
+        self.backend_args, self.var_file_args = self.process_tfvars(self.known_args.tfvars_file_path)  # NOQA
 
     def run_tf_cmd(self) -> int:
         """
@@ -178,7 +193,6 @@ class Enviroform:
         providing inferential support where needed.
         Returns: Integer, tf return code.
         """
-
         self.process_args()
         if self.dry_run:
             print('\n==== Executing in --dryrun mode ===\n')
@@ -240,7 +254,7 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     parser.add_argument(
         '--tfvars-file-path',
         '-z',
-        help='path to .tfvars directory'
+        help='path to your primary .tfvars file'
     )
     parser.add_argument(
         '--dry-run',
@@ -251,7 +265,7 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     return parser.parse_known_args()
 
 
-def get_root_path() -> str:
+def get_git_root_path() -> str:
     """Returns the root path of the git repo that is."""
     git_cmd = ["git", "rev-parse", "--show-toplevel"]
     return subprocess.check_output(git_cmd).rstrip().decode('ascii')
@@ -273,7 +287,7 @@ def main() -> int:
     sys.exit(
         Enviroform(
             get_tf_cmd(),
-            get_root_path(),
+            get_git_root_path(),
             known_args,
             other_args
         ).run_tf_cmd())
